@@ -17,7 +17,7 @@ view_z = 2.0
 quadric = None
 
 def robo_func (link, base_pos, pos) :
-    print " pos --> {0}".format(pos)
+    print(" pos --> {0}".format(pos))
     glVertex3d(base_pos[0], base_pos[1], base_pos[2])
     glVertex3d(pos[0], pos[1], pos[2])
 
@@ -99,7 +99,8 @@ def draw():
     robo_link.func_links(array([0.0,0.0,0.0]), robo_func)
     glEnd()
 
-    robo_link.func_links(array([0.0,0.0,0.0]), robo_joint_func)
+    # TODO:
+    #robo_link.func_links(array([0.0,0.0,0.0]), robo_joint_func)
 
     #glColor3d(0.0,1.0,0.0)
     #glBegin(GL_TRIANGLES)
@@ -122,26 +123,26 @@ def resize(w, h):
 
 def mouse(button, state, x, y):
     if button == GLUT_LEFT_BUTTON:
-        print "left button",
+        print("left button")
     elif button == GLUT_MIDDLE_BUTTON:
-        print "middle button",
+        print("middle button")
     elif button == GLUT_RIGHT_BUTTON:
-        print "right button",
+        print("right button")
     else:
-        print "unknown button:", button,
+        print("unknown button {0}".format(button))
 
     if state == GLUT_DOWN:
-        print "down mouse button",
+        print("down mouse button")
     elif state == GLUT_UP:
-        print "up mouse button",
+        print("up mouse button")
     else:
-        print "unknown state:", state,
+        print("unknown state: {0}".format(state))
 
     print(x, y)
 
 
 def motion(x, y):
-    print "drag:", x, y
+    print("drag:{0} {1}".format(x, y))
 
 
 def keyboard(key, x, y):
@@ -155,13 +156,13 @@ def keyboard(key, x, y):
         sys.exit()
     elif key == 'j':
         view_dis = view_dis + 0.5
-        print view_dis
+        print(view_dis)
         #gluPerspective(30.0, 1.0, -3.0, 10.0); 
         #gluLookAt( 0, 0, -view_dis, 0, 0, 0, 0, 1, 0)
         draw()
     elif key == 'k':
         view_dis = view_dis - 0.5
-        print view_dis
+        print(view_dis)
         #gluPerspective(30.0, 1.0, -3.0, 10.0); 
         #gluLookAt( 0, 0, -view_dis, 0, 0, 0, 0, 1, 0)
         draw()
