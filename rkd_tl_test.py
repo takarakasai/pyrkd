@@ -101,7 +101,7 @@ def draw():
     glEnd()
 
     # TODO:
-    #robo_link.func_links(array([0.0,0.0,0.0]), robo_joint_func)
+    robo_link.func_links(array([0.0,0.0,0.0]), robo_joint_func)
 
     #glColor3d(0.0,1.0,0.0)
     #glBegin(GL_TRIANGLES)
@@ -151,55 +151,58 @@ def keyboard(key, x, y):
     global tz
     global round
     global view_z
-    if key == '\033':
+    if key == b'\033':
         sys.exit()
-    elif key == 'q':
+    elif key == b'q':
         sys.exit()
-    elif key == 'j':
+    elif key == b'j':
         view_dis = view_dis + 0.5
         print(view_dis)
         #gluPerspective(30.0, 1.0, -3.0, 10.0); 
         #gluLookAt( 0, 0, -view_dis, 0, 0, 0, 0, 1, 0)
         draw()
-    elif key == 'k':
+    elif key == b'k':
         view_dis = view_dis - 0.5
         print(view_dis)
         #gluPerspective(30.0, 1.0, -3.0, 10.0); 
         #gluLookAt( 0, 0, -view_dis, 0, 0, 0, 0, 1, 0)
         draw()
-    elif key == 'u':
+    elif key == b'u':
         round = round + 10.0
         draw()
-    elif key == 'i':
+    elif key == b'i':
         round = round - 10.0
         draw()
-    elif key == 'n':
+    elif key == b'n':
         view_z = view_z + 0.5
         draw()
-    elif key == 'm':
+    elif key == b'm':
         view_z = view_z - 0.5
         draw()
-    #elif key == '1' or key == '2' :
-    elif key in ['1','2','3','4','5','6','7','8','9','0'] :
+    #elif key == b'1' or key == b'2' :
+    elif key in [b'1',b'2',b'3',b'4',b'5',b'6',b'7',b'8',b'9',b'0'] :
+        key = key.decode()
+        print("==>{0}".format(str(key)))
         global robo_link
-        link = robo_link.get_link(key)
+        link = robo_link.get_link(str(key))
         if (link != None) :
             link.joint.angle = link.joint.angle + deg2rad(10)
             robo_link.update(array([0.0,0.0,0.0]))
             draw()
-            #print link.joint.angle
+            #print (link.joint.angle)
             return
 
-    elif key in ['!','@','#','$','%','^','&','*','(',')'] :
-        index = ['!','@','#','$','%','^','&','*','(',')'].index(key)
+    elif key in [b'!',b'@',b'#',b'$',b'%',b'^',b'&',b'*',b'(',b')'] :
+        index = [b'!',b'@',b'#',b'$',b'%',b'^',b'&',b'*',b'(',b')'].index(key)
         value = ['1','2','3','4','5','6','7','8','9','0'][index]
+        print(key)
         global robo_link
         link = robo_link.get_link(str(value))
         if (link != None) :
             link.joint.angle = link.joint.angle - deg2rad(10)
             robo_link.update(array([0.0,0.0,0.0]))
             draw()
-            #print link.joint.angle
+            #print (link.joint.angle)
             return
         
     else:
