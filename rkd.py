@@ -494,7 +494,7 @@ class link :
         return ret
 
     def print_moment (self) :
-        print " Joint{0} : {1:9.3f} by {2}".format(self.name, dot(self.total_mass_moment, self.joint.axis), self.total_mass_moment)
+        print(" Joint{0} : {1:9.3f} by {2}".format(self.name, dot(self.total_mass_moment, self.joint.axis), self.total_mass_moment))
         if (self.nlink == None) :
             return
         return self.nlink.print_moment()
@@ -628,7 +628,7 @@ class robo :
             jacobi_from_plus[idx][0:3] = tlink.pos
             jacobi_from_plus_rot[idx] = tlink.local2world
 
-        print jacobi_from_plus[0]
+        print(jacobi_from_plus[0])
 
         for idx in range(0,num) :
             angles = base_angles.copy()
@@ -639,7 +639,7 @@ class robo :
             jacobi_from_minus[idx][0:3] = tlink.pos
             jacobi_from_minus_rot[idx] = tlink.local2world
 
-        print jacobi_from_minus[0]
+        print(jacobi_from_minus[0])
 
         jacobi_from_diff = ((jacobi_from_plus.T - jacobi_from_minus.T) / (delta_q * 2))
         for idx in range(0,num) :
@@ -701,22 +701,7 @@ if __name__ == "__main__":
         blink = link0
         tlink = link5
         num = blink.get_num_of_links() - tlink.get_num_of_links() + 1
-<<<<<<< HEAD:dp_roki.py
         print("{0} --> {1} : {2}".format(blink.name, tlink.name, num))
-
-        #base_angles = array([20, 30, 20, 30, 20, 30])
-        #base_angles = array([ 0, 0, 45, 0, 0, 0]) # OK.
-        #base_angles = array([ 0, 0, 90, 0, 0, 0]) # OK.
-        #base_angles = array([90, 0,  0, 0, 0, 0]) # OK.
-        #base_angles = array([0, 45, 0, 0, 0, 0])  # OK.
-        #base_angles = array([0, 90, 0, 0, 0, 0])  # OK.
-        #base_angles = array([45, 45, 45, 0, 0, 0]) # OK.
-        #base_angles = array([0, 0, 0, 0, 0, 0]) # OK.
-        base_angles = array([20, 30, 40, 60, 80, -20]) # OK.
-        base_angles = deg2rad(base_angles)
-        for idx in range(0,num) :
-          robo.set_joint_angle_rad(idx + 1, base_angles[idx])
-        robo.update()
 
         #base_angles = deg2rad(array([0, 0, 0, 0, 0, 0])) # OK.
         #base_angles = deg2rad(array([90, 0, 0, 0, 0, 0])) # OK.
@@ -756,7 +741,7 @@ if __name__ == "__main__":
         tlink = link5
         num = blink.get_num_of_links() - tlink.get_num_of_links() + 1
 
-        print ""
+        print("")
         diff_max = 0
         for idx in range(10) :
             base_angles = random.rand(num) * 2 * pi
@@ -774,18 +759,18 @@ if __name__ == "__main__":
 
             sys.stdout.write("\r {0} norm : {1}, {2} @ {3}".format(idx, diff, diff_max, base_angles))
             if diff > 2.0E-4 :
-                print "ERROR : norm = {0}".format(diff)
-                print " --- jacobian ------"
-                print jacobian
-                print " --- jacobian vm ---"
-                print jacobian_vm
+                print ("ERROR : norm = {0}".format(diff))
+                print (" --- jacobian ------")
+                print (jacobian)
+                print (" --- jacobian vm ---")
+                print (jacobian_vm)
 
-        print ""
+        print("")
        
         invJ = linalg.pinv(jacobian)
-        print invJ
-        print around(dot(jacobian, invJ), 3)
-        print around(dot(invJ, jacobian), 3)
+        print (invJ)
+        print (around(dot(jacobian, invJ), 3))
+        print (around(dot(invJ, jacobian), 3))
         #print dot(invJ.T, jacobian)
 
         #base_angles = array([20, 30, 40, 60, 80, -20]) # OK.
