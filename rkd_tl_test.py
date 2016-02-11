@@ -6,7 +6,8 @@ from OpenGL.GLUT import *
 
 from numpy import *
 
-from dp_roki import *
+#from dp_roki import *
+from rkd import *
 
 tz = 1.0
 view_dis = 15.5
@@ -207,11 +208,9 @@ def keyboard(key, x, y):
 def init_robo() :
     blink = link(name='blink')
     blink.tip_offset = array([0,0,0])
-    link0 = link(name='0', parent_link = blink, axis = array([0,0,1]))
-    link1 = link(name='1', parent_link = link0)
-    #link2 = link(name='2', parent_link = link1, axis = array([0,0,1]))
-    link2 = link(name='2', parent_link = link1)
-    #link3 = link(name='3', parent_link = link2)
+    link0 = link(name='0', parent_link = blink, axis = array([1,0,0]))
+    link1 = link(name='1', parent_link = link0, axis = array([0,1,0]))
+    link2 = link(name='2', parent_link = link1, axis = array([0,0,1]))
     link3 = link(name='3', parent_link = link2, axis = array([1,0,0]))
     link4 = link(name='4', parent_link = link3)
     link5 = link(name='5', parent_link = link4)
