@@ -31,9 +31,12 @@ def robo_joint_func (link, base_pos, pos) :
     ltrans = mat3to4(link.local2world.T)
     glMultMatrixd(ltrans)
 
+    glPushMatrix()
+
     # draw link
     glColor3d(0.8,0.8,0.8)
-    glutSolidCylinder( 0.1, link.tip_offset[2], 20, 6)
+    gluCylinder( quadric, 0.1, 0.1, link.tip_offset[2], 20, 6)
+    #glutSolidCylinder( 0.1, link.tip_offset[2], 20, 6)
 
     #print link.local2world
     #print ltrans
@@ -45,12 +48,15 @@ def robo_joint_func (link, base_pos, pos) :
 
     # draw joint
     glColor3d(0.1,0.5,0.1)
-    glutSolidCylinder( 0.2, cylinder_height, 20, 6)
+    gluCylinder( quadric, 0.2, 0.2, cylinder_height, 20, 6)
+    #glutSolidCylinder( 0.2, cylinder_height, 20, 6)
     glColor3d(0.0,0.0,0.0)
-    glutWireCylinder( 0.2, cylinder_height, 20, 6)
+    #glutWireCylinder( 0.2, cylinder_height, 20, 6)
 
     #glutSolidSphere( 0.4, 20, 6)
     #gluCylinder(quadric, 0, 10, 10, 20, 6)
+
+    glPopMatrix()
 
     glPopMatrix()
     return
@@ -58,7 +64,7 @@ def robo_joint_func (link, base_pos, pos) :
 def init():
     global quadric
     glClearColor(0.0, 0.5, 0.5, 0.0)
-    #glEnable(GL_DEPTH_TEST)
+    glEnable(GL_DEPTH_TEST)
     #glEnable(GL_CULL_FACE)
     #glEnable(GL_LIGHTING)
     #glEnable(GL_LIGHT0)
