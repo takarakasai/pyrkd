@@ -33,28 +33,39 @@ def robo_joint_func (link, base_pos, pos) :
 
     glPushMatrix()
 
-    # draw link
-    glColor3d(0.8,0.8,0.8)
+    ##########################
+    ############## draw link
+    #glColor3d(1.0,1.0,1.0)
+    glMaterialfv(GL_FRONT , GL_SPECULAR, [1.0,1.0,1.0, 1.0])
+    glMaterialfv(GL_FRONT , GL_DIFFUSE, [0.7,0.7,0.7, 1.0])
+    glMaterialfv(GL_FRONT , GL_AMBIENT, [0.35,0.35,0.35, 1.0])
+    glMaterialf(GL_FRONT , GL_SHININESS, 0.8)
     gluCylinder( quadric, 0.1, 0.1, link.tip_offset[2], 20, 6)
-    #glutSolidCylinder( 0.1, link.tip_offset[2], 20, 6)
+    # TODO: gluDisk
 
     #print link.local2world
     #print ltrans
     ltrans = mat3to4(link.joint.get_rot_z2axis())
     glMultMatrixd(ltrans)
 
+    ############## draw joint
+    glMaterialfv(GL_FRONT , GL_SPECULAR, [1.0,1.0,1.0, 1])
+    glMaterialfv(GL_FRONT , GL_AMBIENT, [0.0,1.0,0.0, 1])
+    glMaterialfv(GL_FRONT , GL_DIFFUSE, [0.0,0.8,0.0, 1])
+    glMaterialf(GL_FRONT , GL_SHININESS, 0.8)
+
     cylinder_height = 0.6
     glTranslated(0, 0, -(cylinder_height / 2.0))
 
-    # draw joint
-    glColor3d(0.1,0.5,0.1)
-    gluCylinder( quadric, 0.2, 0.2, cylinder_height, 20, 6)
-    #glutSolidCylinder( 0.2, cylinder_height, 20, 6)
-    glColor3d(0.0,0.0,0.0)
-    #glutWireCylinder( 0.2, cylinder_height, 20, 6)
+    gluCylinder( quadric, 0.2, 0.2, cylinder_height, 10, 2)
 
-    #glutSolidSphere( 0.4, 20, 6)
-    #gluCylinder(quadric, 0, 10, 10, 20, 6)
+    #gluQuadricOrientation(quadric, GLU_INSIDE);
+    gluDisk( quadric, 0.0, 0.2, 10, 2)
+    #gluQuadricOrientation(quadric, GLU_OUTSIDE);
+
+    glTranslated(0, 0, (cylinder_height))
+    gluDisk( quadric, 0.0, 0.2, 10, 2)
+    ##########################
 
     glPopMatrix()
 
@@ -63,26 +74,51 @@ def robo_joint_func (link, base_pos, pos) :
 
 def init():
     global quadric
-    glClearColor(0.0, 0.5, 0.5, 0.0)
+    quadric = gluNewQuadric()
+    #/* 面の塗り潰しを指定する（線画ではなく陰影をつけた円柱を描く）*/
+    gluQuadricDrawStyle(quadric, GLU_FILL);
+    #/* スムースシェーディングを行うよう設定する */
+    gluQuadricNormals(quadric, GLU_SMOOTH);
+
+
+    #glLightfv(GL_LIGHT0, GL_AMBIENT, [1,0,1.0,1.0])
+    glLightfv(GL_LIGHT0, GL_POSITION, [-1.0, -1.0, 4.0, 1.0]);
+    glLightfv(GL_LIGHT0, GL_AMBIENT, [1,0, 1.0, 1.0, 1.0])
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, [0.7, 0.7, 0.7, 1.0]);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, [0.2, 0.2, 0.2, 1.0]);
+    glEnable(GL_LIGHT0)
+
+    #glLightfv(GL_LIGHT2, GL_POSITION, [1.0, 1.0, 4.0, 1.0]);
+    #glLightfv(GL_LIGHT2, GL_AMBIENT, [1,0, 1.0, 1.0, 1.0])
+    #glLightfv(GL_LIGHT2, GL_DIFFUSE, [0.7, 0.7, 0.7, 1.0]);
+    #glLightfv(GL_LIGHT2, GL_SPECULAR, [0.2, 0.2, 0.2, 1.0]);
+    #glEnable(GL_LIGHT2)
+
+    glClearColor(1.0, 1.0, 1.0, 0.0)
     glEnable(GL_DEPTH_TEST)
     #glEnable(GL_CULL_FACE)
-    #glEnable(GL_LIGHTING)
-    #glEnable(GL_LIGHT0)
-    quadric = gluNewQuadric()
+    glEnable(GL_LIGHTING)
 
 def draw_floor(cx, cy, cz, width, height) :
     global quadric
-    #gl_rectangle(int left, int top, int right, int bottom, int lwidth, int style, unsigned long prgb, unsigned long hrgb)
+
+    glMaterialfv(GL_FRONT , GL_SPECULAR, [1.0,1.0,1.0, 1.0])
+    glMaterialfv(GL_FRONT , GL_DIFFUSE, [0.7,0.7,0.7, 1.0])
+    glMaterialfv(GL_FRONT , GL_AMBIENT, [0.35,0.35,0.35, 1.0])
+    glMaterialf(GL_FRONT , GL_SHININESS, 0.8)
+ 
     dx = width / 2.0
     dy = height / 2.0
-    glColor3d(0.3,0.3,0.3)
+
     glBegin(GL_TRIANGLES)
+    glNormal3d(1.0,1.0,0.0)
     glVertex3d(cx - dx, cy + dy, cz)
     glVertex3d(cx - dx, cy - dy, cz)
     glVertex3d(cx + dx, cy + dy, cz)
     glEnd()
-    glColor3d(0.5,0.5,0.5)
+
     glBegin(GL_TRIANGLES)
+    glNormal3d(1.0,1.0,0.0)
     glVertex3d(cx + dx, cy + dy, cz)
     glVertex3d(cx - dx, cy - dy, cz)
     glVertex3d(cx + dx, cy - dy, cz)
@@ -94,39 +130,36 @@ def draw():
     global robo_link
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-    # model view matrix reset
+    glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
     gluPerspective(30.0, 1.0, 0.5, 100.0); 
-    #gluLookAt( 0, -view_dis, 0, 0, 0, 0, 0, 0, 1)
-    gluLookAt( -view_dis * sin(deg2rad(round)), -view_dis * cos(deg2rad(round)), view_z, 0, 0, view_z, 0, 0, 1)
+    vx = -view_dis * sin(deg2rad(round))
+    vy = -view_dis * cos(deg2rad(round))
+    gluLookAt( vx, vy, view_z, 0, 0, view_z, 0, 0, 1)
 
-    draw_floor(0.0, 0.0, 0.0, 100, 100)
+    # model view matrix reset
+    glMatrixMode(GL_MODELVIEW)
+    glLoadIdentity()
+    draw_floor(0.0, 0.0, -1.0, 100, 100)
 
-    glBegin(GL_LINES)
-    robo_link.func_links(array([0.0,0.0,0.0]), robo_func)
-    glEnd()
+    #glBegin(GL_LINES)
+    #robo_link.func_links(array([0.0,0.0,0.0]), robo_func)
+    #glEnd()
 
     # TODO:
     robo_link.func_links(array([0.0,0.0,0.0]), robo_joint_func)
-
-    #glColor3d(0.0,1.0,0.0)
-    #glBegin(GL_TRIANGLES)
-    #glVertex(-1, 0, 1)
-    #glVertex(1, 0, 1)
-    #glVertex(0, 0, 2)
-    #glEnd()
 
     glFlush()
     glutSwapBuffers()
 
 def resize(w, h):
+    #glShadeModel(GL_SMOOTH) # TODO:
     glViewport(0, 0, w, h)
 
-    #glMatrixMode(GL_PROJECTION)
+    glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
+    # TODO: use glFrustum
     gluPerspective(30.0, -view_dis, 1.0, 100.0)
-    #glMatrixMode(GL_MODELVIEW)
-
 
 def mouse(button, state, x, y):
     if button == GLUT_LEFT_BUTTON:
