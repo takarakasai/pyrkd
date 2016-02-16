@@ -16,6 +16,7 @@ view_z = 2.0
 #count = 10.0
 
 quadric = None
+bf_time = None
 
 def robo_func (link, base_pos, pos) :
     print(" pos --> {0}".format(pos))
@@ -59,9 +60,9 @@ def robo_joint_func (link, base_pos, pos) :
 
     gluCylinder( quadric, 0.2, 0.2, cylinder_height, 10, 2)
 
-    #gluQuadricOrientation(quadric, GLU_INSIDE);
+    gluQuadricOrientation(quadric, GLU_INSIDE);
     gluDisk( quadric, 0.0, 0.2, 10, 2)
-    #gluQuadricOrientation(quadric, GLU_OUTSIDE);
+    gluQuadricOrientation(quadric, GLU_OUTSIDE);
 
     glTranslated(0, 0, (cylinder_height))
     gluDisk( quadric, 0.0, 0.2, 10, 2)
@@ -96,7 +97,7 @@ def init():
 
     glClearColor(1.0, 1.0, 1.0, 0.0)
     glEnable(GL_DEPTH_TEST)
-    #glEnable(GL_CULL_FACE)
+    glEnable(GL_CULL_FACE)
     glEnable(GL_LIGHTING)
 
 def draw_floor(cx, cy, cz, width, height) :
@@ -272,6 +273,18 @@ def init_robo() :
 
     return blink
 
+def cb(value) :
+    global bf_time
+    from datetime import datetime
+    af_time = datetime.now()
+    if (bf_time != None):
+        print(af_time - bf_time)
+    bf_time = af_time
+
+    #draw()
+
+    glutTimerFunc(0, cb, 0)
+
 glutInit(sys.argv)
 glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH)
 glutInitWindowSize(640, 480)
@@ -281,6 +294,7 @@ glutDisplayFunc(draw)
 glutMouseFunc(mouse)
 glutMotionFunc(motion)
 glutKeyboardFunc(keyboard)
+glutTimerFunc(1, cb, 0)
 
 init()
 robo_link = init_robo()
