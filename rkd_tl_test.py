@@ -51,8 +51,8 @@ def robo_joint_func (link, base_pos, pos) :
 
     ############## draw joint
     glMaterialfv(GL_FRONT , GL_SPECULAR, [1.0,1.0,1.0, 1])
-    glMaterialfv(GL_FRONT , GL_AMBIENT, [0.0,1.0,0.0, 1])
-    glMaterialfv(GL_FRONT , GL_DIFFUSE, [0.0,0.8,0.0, 1])
+    glMaterialfv(GL_FRONT , GL_AMBIENT, [0.4,0.4,0.4, 1])
+    glMaterialfv(GL_FRONT , GL_DIFFUSE, [0.2,0.2,0.2, 1])
     glMaterialf(GL_FRONT , GL_SHININESS, 0.8)
 
     cylinder_height = 0.6
@@ -82,9 +82,8 @@ def init():
     gluQuadricNormals(quadric, GLU_SMOOTH);
 
 
-    #glLightfv(GL_LIGHT0, GL_AMBIENT, [1,0,1.0,1.0])
-    glLightfv(GL_LIGHT0, GL_POSITION, [-1.0, -1.0, 4.0, 1.0]);
-    glLightfv(GL_LIGHT0, GL_AMBIENT, [1,0, 1.0, 1.0, 1.0])
+    glLightfv(GL_LIGHT0, GL_POSITION, [-2.0, -2.0, 4.0, 1.0]);
+    glLightfv(GL_LIGHT0, GL_AMBIENT, [1.0, 1.0, 1.0, 1.0])
     glLightfv(GL_LIGHT0, GL_DIFFUSE, [0.7, 0.7, 0.7, 1.0]);
     glLightfv(GL_LIGHT0, GL_SPECULAR, [0.2, 0.2, 0.2, 1.0]);
     glEnable(GL_LIGHT0)
