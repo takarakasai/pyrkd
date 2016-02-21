@@ -257,25 +257,19 @@ def keyboard(key, x, y):
         print(view_dis)
         #gluPerspective(30.0, 1.0, -3.0, 10.0); 
         #gluLookAt( 0, 0, -view_dis, 0, 0, 0, 0, 1, 0)
-        draw()
     elif key == b'k':
         view_dis = view_dis - 0.5
         print(view_dis)
         #gluPerspective(30.0, 1.0, -3.0, 10.0); 
         #gluLookAt( 0, 0, -view_dis, 0, 0, 0, 0, 1, 0)
-        draw()
     elif key == b'u':
         round = round + 10.0
-        draw()
     elif key == b'i':
         round = round - 10.0
-        draw()
     elif key == b'n':
         view_z = view_z + 0.5
-        draw()
     elif key == b'm':
         view_z = view_z - 0.5
-        draw()
     #elif key == b'1' or key == b'2' :
     elif key in [b'1',b'2',b'3',b'4',b'5',b'6',b'7',b'8',b'9',b'0'] :
         key = key.decode()
@@ -285,7 +279,6 @@ def keyboard(key, x, y):
         if (link != None) :
             link.joint.angle = link.joint.angle + deg2rad(10)
             robo_link.update(array([0.0,0.0,0.0]))
-            draw()
             #print (link.joint.angle)
             return
 
@@ -298,7 +291,6 @@ def keyboard(key, x, y):
         if (link != None) :
             link.joint.angle = link.joint.angle - deg2rad(10)
             robo_link.update(array([0.0,0.0,0.0]))
-            draw()
             #print (link.joint.angle)
             return
         
