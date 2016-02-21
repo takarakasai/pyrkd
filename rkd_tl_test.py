@@ -29,10 +29,20 @@ def robo_func (link, base_pos, pos) :
 
 def robo_joint_func (link, base_pos, pos) :
     glPushMatrix()
-    glTranslated(base_pos[0], base_pos[1], base_pos[2])
+    glTranslatef(base_pos[0], base_pos[1], base_pos[2])
 
     ltrans = mat3to4(link.local2world.T)
     glMultMatrixd(ltrans)
+
+    glPushMatrix()
+    glTranslatef(0.5,0,0)
+    #glRasterPos(0,0,0)
+    glRotatef(90,1.0,0.0,0.0)
+    glScalef(0.4,0.4,0.4)
+    glColor4f(1.0,1.0,1.0,1.0)
+    moment = dot(link.total_mass_moment, link.joint.axis)
+    font.Render("Tg {0:.2f} [Nm]".format(moment))
+    glPopMatrix()
 
     glPushMatrix()
 
@@ -45,7 +55,7 @@ def robo_joint_func (link, base_pos, pos) :
     glMaterialf(GL_FRONT , GL_SHININESS, 0.8)
     gluCylinder( quadric, 0.1, 0.1, link.tip_offset[2], 20, 6)
     
-    glTranslated(0, 0, (link.tip_offset[2]))
+    glTranslatef(0, 0, (link.tip_offset[2]))
     gluDisk( quadric, 0.0, 0.1, 10, 2)
 
     glPopMatrix()
@@ -63,7 +73,7 @@ def robo_joint_func (link, base_pos, pos) :
     glMaterialf(GL_FRONT , GL_SHININESS, 0.8)
 
     cylinder_height = 0.6
-    glTranslated(0, 0, -(cylinder_height / 2.0))
+    glTranslatef(0, 0, -(cylinder_height / 2.0))
 
     gluCylinder( quadric, 0.2, 0.2, cylinder_height, 10, 2)
 
@@ -71,7 +81,7 @@ def robo_joint_func (link, base_pos, pos) :
     gluDisk( quadric, 0.0, 0.2, 10, 2)
     gluQuadricOrientation(quadric, GLU_OUTSIDE);
 
-    glTranslated(0, 0, (cylinder_height))
+    glTranslatef(0, 0, (cylinder_height))
     gluDisk( quadric, 0.0, 0.2, 10, 2)
     ##########################
 
@@ -155,6 +165,7 @@ count = 0
 def draw_osd():
     global diff_time
     global count
+    global font2
 
     if diff_time == None :
       return
@@ -165,7 +176,7 @@ def draw_osd():
 
     # usec --> msec
     msec = diff_time / 1000
-    font.Render(" FrameRate {0:5.0f} at {1:1.4f}".format(1000 / msec, msec))
+    font2.Render(" FrameRate {0:5.0f} at {1:1.4f}".format(1000 / msec, msec))
 
 def draw():
     global view_dis
@@ -309,6 +320,7 @@ def init_robo() :
     return blink
 
 font = None
+font2 = None
 diff_time = None
 count = 0
 
@@ -333,13 +345,17 @@ def cb_draw(value) :
 
 def init_font() :
     global font
+    global font2
     fontfile = "/System/Library/Fonts/AppleSDGothicNeo.ttc"
-    font = FTGL.OutlineFont(fontfile)
+    #font = FTGL.OutlineFont(fontfile)
     font = FTGL.PolygonFont(fontfile)
-    font = FTGL.TextureFont(fontfile)
-    font = FTGL.BitmapFont(fontfile)
-    font = FTGL.PixmapFont(fontfile)
-    font.FaceSize(24, 72)
+    #font = FTGL.TextureFont(fontfile)
+    #font = FTGL.BitmapFont(fontfile)
+    #font = FTGL.PixmapFont(fontfile)
+    font.FaceSize(0, 1)
+
+    font2 = FTGL.PixmapFont(fontfile)
+    font2.FaceSize(24, 72)
 
 glutInit(sys.argv)
 glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH)
