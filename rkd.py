@@ -393,7 +393,7 @@ class link :
         if (self.nlink != None) :
             self.nlink.update_forward(self.pos)
 
-    # backward dinamics
+    # backward dynamics
     def update_gforce (self) :
         if (self.nlink == None) :
             self.total_mass = self.mass
