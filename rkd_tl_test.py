@@ -6,6 +6,8 @@ from OpenGL.GLUT import *
 
 from numpy import *
 
+import FTGL
+
 #from dp_roki import *
 from rkd import *
 
@@ -42,7 +44,12 @@ def robo_joint_func (link, base_pos, pos) :
     glMaterialfv(GL_FRONT , GL_AMBIENT, [0.35,0.35,0.35, 1.0])
     glMaterialf(GL_FRONT , GL_SHININESS, 0.8)
     gluCylinder( quadric, 0.1, 0.1, link.tip_offset[2], 20, 6)
-    # TODO: gluDisk
+    
+    glTranslated(0, 0, (link.tip_offset[2]))
+    gluDisk( quadric, 0.0, 0.1, 10, 2)
+
+    glPopMatrix()
+    glPushMatrix()
 
     #print link.local2world
     #print ltrans
@@ -76,9 +83,7 @@ def robo_joint_func (link, base_pos, pos) :
 def init():
     global quadric
     quadric = gluNewQuadric()
-    #/* 面の塗り潰しを指定する（線画ではなく陰影をつけた円柱を描く）*/
     gluQuadricDrawStyle(quadric, GLU_FILL);
-    #/* スムースシェーディングを行うよう設定する */
     gluQuadricNormals(quadric, GLU_SMOOTH);
 
 
@@ -124,18 +129,11 @@ def draw_floor(cx, cy, cz, width, height) :
     glVertex3d(cx + dx, cy - dy, cz)
     glEnd()
 
-def draw():
-    global view_dis
-    global tz
-    global robo_link
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+def _draw():
+    return 
 
-    glMatrixMode(GL_PROJECTION)
-    glLoadIdentity()
-    gluPerspective(30.0, 1.0, 0.5, 100.0); 
-    vx = -view_dis * sin(deg2rad(round))
-    vy = -view_dis * cos(deg2rad(round))
-    gluLookAt( vx, vy, view_z, 0, 0, view_z, 0, 0, 1)
+def draw_robot():
+    global robo_link
 
     # model view matrix reset
     glMatrixMode(GL_MODELVIEW)
@@ -149,8 +147,46 @@ def draw():
     # TODO:
     robo_link.func_links(array([0.0,0.0,0.0]), robo_joint_func)
 
+def draw_world():
+    draw_robot()
+
+count = 0
+
+def draw_osd():
+    global diff_time
+    global count
+
+    if diff_time == None :
+      return
+
+    glMatrixMode(GL_MODELVIEW)
+    glLoadIdentity()
+    glColor3f(1.0, 1.0, 1.0)
+
+    # usec --> msec
+    msec = diff_time / 1000
+    font.Render(" FrameRate {0:5.0f} at {1:1.4f}".format(1000 / msec, msec))
+
+def draw():
+    global view_dis
+    global tz
+    #glClear(GL_COLOR_BUFFER_BIT)
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+    glMatrixMode(GL_PROJECTION)
+    glLoadIdentity()
+
+    gluPerspective(30.0, 1.0, 0.5, 100.0); 
+    vx = -view_dis * sin(deg2rad(round))
+    vy = -view_dis * cos(deg2rad(round))
+    gluLookAt( vx, vy, view_z, 0, 0, view_z, 0, 0, 1)
+
+    draw_world()
+    draw_osd()
+
     glFlush()
     glutSwapBuffers()
+
 
 def resize(w, h):
     #glShadeModel(GL_SMOOTH) # TODO:
@@ -272,29 +308,51 @@ def init_robo() :
 
     return blink
 
-def cb(value) :
+font = None
+diff_time = None
+count = 0
+
+def cb_draw(value) :
     global bf_time
-    from datetime import datetime
-    af_time = datetime.now()
-    if (bf_time != None):
-        print(af_time - bf_time)
-    bf_time = af_time
+    global diff_time
+    global count
 
-    #draw()
+    max_count = 10
+    count = count + 1
+    if count >= 10 :
+      count = 0
+      from datetime import datetime
+      af_time = datetime.now()
+      if (bf_time != None):
+          diff_time = (af_time - bf_time).microseconds / max_count
+      bf_time = af_time
 
-    glutTimerFunc(0, cb, 0)
+    draw()
+
+    glutTimerFunc(0, cb_draw, 0)
+
+def init_font() :
+    global font
+    fontfile = "/System/Library/Fonts/AppleSDGothicNeo.ttc"
+    font = FTGL.OutlineFont(fontfile)
+    font = FTGL.PolygonFont(fontfile)
+    font = FTGL.TextureFont(fontfile)
+    font = FTGL.BitmapFont(fontfile)
+    font = FTGL.PixmapFont(fontfile)
+    font.FaceSize(24, 72)
 
 glutInit(sys.argv)
 glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH)
 glutInitWindowSize(640, 480)
 glutCreateWindow("PyOpenGL 5")
 glutReshapeFunc(resize)
-glutDisplayFunc(draw)
+glutDisplayFunc(_draw)
 glutMouseFunc(mouse)
 glutMotionFunc(motion)
 glutKeyboardFunc(keyboard)
-glutTimerFunc(1, cb, 0)
+glutTimerFunc(16, cb_draw, 0)
 
 init()
+init_font()
 robo_link = init_robo()
 glutMainLoop()

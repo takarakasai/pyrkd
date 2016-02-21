@@ -394,51 +394,41 @@ class link :
             self.nlink.update_forward(self.pos)
 
     # backward dinamics
-    def update_backward (self) :
+    def update_gforce (self) :
         if (self.nlink == None) :
             self.total_mass = self.mass
             self.total_mass_pos = self.mass_offset
         else :
-            self.nlink.update_backward()
-            #print "======================== {0}".format(self.name)
+            self.nlink.update_gforce()
+
+            # Update center of gravity by all of childs' mass
 
             nodes_mass = self.nlink.total_mass
             nodes_mass_pos = self.nlink.total_mass_pos
             self.total_mass = self.mass + self.nlink.total_mass
-            ##self.total_mass_pos = dot(self.nlink.joint.get_rot().T, nodes_mass_pos)
+
+            #  (Mi*Ri + Ma*Ri+1*Ra)
+            #  --------------------
+            #        Mi +  Ma
             self.total_mass_pos = self.tip_offset + dot(self.nlink.joint.get_rot(), nodes_mass_pos)
-            #self.total_mass_pos = self.tip_offset + dot(self.nlink.joint.get_rot().T, nodes_mass_pos)
             self.total_mass_pos = (self.mass * self.mass_offset + nodes_mass * self.total_mass_pos) / (self.mass + nodes_mass)
 
-        #print "================"
-        #print " link name {0}".format(self.name)
-        #print self.total_mass
-        #print self.total_mass_pos
-
+        # TODO: should be global
         g = 9.80665
         g_axis_at_world = array([0,0,-1])
-        #print " at world"
-        #print dot(self.local2world, self.total_mass_pos)
-        # gravity directinal vector at the point of view of local coordinate
+
+        # G: gravity vector at world coords
+        # Gl: gravity vector at localcoords of link_i
+        # Gl = Rt0-i * G
         g_axis = dot(self.local2world.T, g_axis_at_world)
-        #print self.local2world
-        #print self.total_mass
-        #print "Joint{0} {1}".format(self.name, self.total_mass_pos)
-        #print "Joint{0} {1}".format(self.name, g_axis * self.total_mass * g)
-        #self.total_mass_moment = self.total_mass * g * cross(g_axis, self.total_mass_pos)
+        # Ma * 9.8 * (Ri x Gl)
         self.total_mass_moment = self.total_mass * g * cross(self.total_mass_pos, g_axis)
-        #print self.joint.get_rot()
-        #print "angle- {0}".format(self.joint.angle)
-        #print "g_axis {0}".format(g_axis)
-        #print "mas {0}".format(self.total_mass)
-        #print "mas poss {0}".format(self.total_mass_pos)
-        #print "moment {0}".format(self.total_mass_moment)
 
         return
 
     def update (self, base_pos) :
         self.update_forward(base_pos)
-        self.update_backward()
+        self.update_gforce()
         return
 
     def func_links (self, base_pos, function) :
