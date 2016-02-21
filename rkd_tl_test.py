@@ -35,13 +35,18 @@ def robo_joint_func (link, base_pos, pos) :
     glMultMatrixd(ltrans)
 
     glPushMatrix()
-    glTranslatef(0.5,0,0)
     #glRasterPos(0,0,0)
-    glRotatef(90,1.0,0.0,0.0)
     glScalef(0.4,0.4,0.4)
-    glColor4f(1.0,1.0,1.0,1.0)
+    glMaterialfv(GL_FRONT , GL_SPECULAR, [1.0,1.0,1.0, 1.0])
+    glMaterialfv(GL_FRONT , GL_DIFFUSE, [0.0,0.0,0.0, 1.0])
+    glMaterialfv(GL_FRONT , GL_AMBIENT, [0.05,0.05,0.05, 1.0])
+    glMaterialf(GL_FRONT , GL_SHININESS, 0.8)
+    glTranslatef(0.5,0,0)
+    glRotatef(90,1.0,0.0,0.0)
     moment = dot(link.total_mass_moment, link.joint.axis)
+    glDisable(GL_CULL_FACE)
     font.Render("Tg {0:.2f} [Nm]".format(moment))
+    glEnable(GL_CULL_FACE)
     glPopMatrix()
 
     glPushMatrix()
@@ -112,6 +117,8 @@ def init():
     glClearColor(1.0, 1.0, 1.0, 0.0)
     glEnable(GL_DEPTH_TEST)
     glEnable(GL_CULL_FACE)
+    #glCullFace(GL_FRONT)
+    glCullFace(GL_BACK)
     glEnable(GL_LIGHTING)
 
 def draw_floor(cx, cy, cz, width, height) :
@@ -344,9 +351,18 @@ def cb_draw(value) :
     glutTimerFunc(0, cb_draw, 0)
 
 def init_font() :
+    import os
+
     global font
     global font2
-    fontfile = "/System/Library/Fonts/AppleSDGothicNeo.ttc"
+
+    if os.name == 'posix' :
+      fontfile = "/usr/share/fonts/truetype/freefont/FreeMonoBold.ttf"
+    elif os.name == 'mac' :
+      fontfile = "/System/Library/Fonts/AppleSDGothicNeo.ttc"
+    else :
+      return
+
     #font = FTGL.OutlineFont(fontfile)
     font = FTGL.PolygonFont(fontfile)
     #font = FTGL.TextureFont(fontfile)
