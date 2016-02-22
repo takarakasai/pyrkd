@@ -8,6 +8,8 @@ from numpy import *
 
 dwg = svgwrite.Drawing(filename="out.svg", debug=True)
 
+I3 = identity(3)
+
 def mat3to4 (mat3) :
     mat4 = array([
             [ mat3[0][0], mat3[0][1], mat3[0][2], 0],
@@ -182,12 +184,27 @@ def _link (sxy,dxy=None,exy=None) :
 #path.push('z')
 #robo.add(path)
 
+base_roll = array([[ 1, 0, 0],
+                  [ 0, 1, 0],
+                  [ 0, 0, 1]])
+base_pitch = array([[ 1, 0, 0],
+                   [ 0, 1, 0],
+                   [ 0, 0, 1]])
+base_yaw = array([[ 1, 0, 0],
+                  [ 0, 1, 0],
+                  [ 0, 0, 1]])
+
 def roll_rot (rad) :
     #print "roll {0}".format(rad)
     rot = array([[        1,        0,        0],
                  [        0, cos(rad),-sin(rad)],
                  [        0, sin(rad), cos(rad)]]);
     return rot
+    #base_roll[1,1] = +cos(rad)
+    #base_roll[1,2] = -sin(rad)
+    #base_roll[2,1] = +sin(rad)
+    #base_roll[2,2] = +cos(rad)
+    #return base_roll
 
 def pitch_rot (rad) :
     #print "pitch {0}".format(rad)
@@ -195,6 +212,11 @@ def pitch_rot (rad) :
                  [        0,        1,        0],
                  [-sin(rad),        0, cos(rad)]]);
     return rot
+    #base_pitch[0,0] = +cos(rad)
+    #base_pitch[0,2] = +sin(rad)
+    #base_pitch[2,0] = -sin(rad)
+    #base_pitch[2,2] = +cos(rad)
+    #return base_pitch
 
 def yaw_rot (rad) :
     #print "yaw {0}".format(rad)
@@ -202,6 +224,11 @@ def yaw_rot (rad) :
                  [ sin(rad), cos(rad),        0],
                  [        0,        0,        1]]);
     return rot
+    #base_yaw[0,0] = +cos(rad)
+    #base_yaw[0,1] = -sin(rad)
+    #base_yaw[1,0] = +sin(rad)
+    #base_yaw[1,1] = +cos(rad)
+    #return base_yaw
 
 def rp_rot (roll, pitch) :
     rot = array([[ cos(pitch), sin(pitch) * sin(roll),  sin(pitch) * cos(roll)],
@@ -229,6 +256,19 @@ def rpy2rad (rpy_rot) :
 class joint :
     # angle [rad]
     angle = deg2rad(0)
+    # veloc [rad/sec]
+    veloc = deg2rad(0)
+    # accel [rad/sec/sec]
+    accel = deg2rad(0)
+
+    # actuational torque [Nm]
+    torque_a = 0.0
+    # external torque [Nm]
+    torque_e = 0.0
+
+    # viscosity
+    visco = 0.0
+
     # axis [1,0,0] or [0,1,0] or [0,0,1]
     axis = array([0,0,0])
 
@@ -281,6 +321,9 @@ class link :
     # Inertia [ Ixx, Ixy, Ixy ],
     #         [ Iyx, Iyy, Iyz ],
     #         [ Izx, Izy, Izz ],
+    mass_inertia = array([[1,0,0],[0,1,0],[0,0,1]])
+
+    # TODO: default value
     inertia = array([[1,0,0],[0,1,0],[0,0,1]])
 
     # parent link
@@ -394,6 +437,38 @@ class link :
             self.nlink.update_forward(self.pos)
 
     # backward dynamics
+    def update_inertia (self) :
+        # Inertia by link own mass/inertia
+        # G = m { (r*r)I - (rt*r) }
+        #         ^^^^^    ^^^^^^
+        #       G_l(1x1)  G_r(3x3)
+        # ------------------------
+        #
+        # Ii = Ri * Ii+1 * Ri^t  + G
+        # 
+        ##l_veloc = self.joint.axis * self.joint.veloc
+        G_l = dot(self.mass_offset, self.mass_offset) * I3
+        G_r = dot(self.mass_offset.T, self.mass_offset)
+        G = self.mass * (G_l + G_r)
+        # 0.2[msec]
+        self.inertia = dot(dot(self.joint.get_rot(), self.mass_inertia), self.joint.get_rot().T) + G
+ 
+        if (self.nlink == None) :
+            #print("===self.inertia", self.inertia)
+            return
+
+        self.nlink.update_inertia()
+
+        # Inertia by node links mass/inertia
+        G_l = dot(self.tip_offset, self.tip_offset) * I3
+        G_r = dot(self.tip_offset.T, self.tip_offset)
+        G = self.nlink.total_mass * (G_l + G_r)
+        # 0.2[msec]
+        self.inertia = dot(dot(self.joint.get_rot(), self.nlink.inertia), self.joint.get_rot().T) + G + self.inertia
+
+        return
+
+    # backward dynamics
     def update_gforce (self) :
         if (self.nlink == None) :
             self.total_mass = self.mass
@@ -424,10 +499,61 @@ class link :
         # Ma * 9.8 * (Ri x Gl)
         self.total_mass_moment = self.total_mass * g * cross(self.total_mass_pos, g_axis)
 
+        self.joint.torque_e = dot(self.total_mass_moment, self.joint.axis)
+
         return
 
-    def update (self, base_pos) :
+    # forward dynamics
+    def update_movement (self) :
+        if (self.nlink == None) :
+            return
+
+        # I   : Inertia
+        # ddq : rotational acceleration
+        # Tact: actuational torque
+        # Text: external torque
+        # u   : viscosity
+        # udq : rotational veloc
+        # I * ddq = Tact + Text - udq
+        #
+        #           Tact + Text - udq
+        #     ddq = -----------------
+        #                   I
+        # 
+        #print("link {0} ta:{1} te:{2}".format(self.name, self.joint.torque_a, self.joint.torque_e))
+        #print("link {0} I^-1:{1} I^-1{2}".format(self.name, linalg.inv(self.inertia), dot(linalg.inv(self.inertia), self.joint.axis)))
+        self.joint.accel = self.joint.torque_a + self.joint.torque_e - self.joint.visco * self.joint.veloc
+        self.joint.accel = dot(self.joint.accel * self.joint.axis, dot(linalg.inv(self.inertia), self.joint.axis))
+
+        # 1.0[msec] --> 0.001[sec]
+        #tick = 0.1 # 0.001
+        tick = 0.001
+        self.joint.angle = self.joint.angle + self.joint.veloc * tick
+        self.joint.veloc = self.joint.veloc + self.joint.accel * tick
+        #print("link {0} ang:{1} veloc:{2} accel:{3}".format(self.name, self.joint.angle, self.joint.veloc, self.joint.accel))
+
+        self.nlink.update_movement()
+
+        return
+
+    def update_tick (self, base_pos) :
+        # forward kinematics
+        # 0.2[msec]
         self.update_forward(base_pos)
+
+        # backward dynamics
+        # 0.4[msec]
+        self.update_gforce()
+        # 0.8[msec] - 1.0[msec]
+        self.update_inertia()
+        # 0.2[msec]
+        self.update_movement()
+
+    def update (self, base_pos) :
+        # forward kinematics
+        self.update_forward(base_pos)
+
+        #TODO
         self.update_gforce()
         return
 

@@ -5,11 +5,15 @@ from OpenGL.GLU import *
 from OpenGL.GLUT import *
 
 from numpy import *
+#from numpypy import *
 
 import FTGL
 
 #from dp_roki import *
 from rkd import *
+
+window_width = 640
+window_height = 480
 
 tz = 1.0
 view_dis = 15.5
@@ -18,10 +22,9 @@ view_z = 2.0
 #count = 10.0
 
 quadric = None
-bf_time = None
 
 def robo_func (link, base_pos, pos) :
-    print(" pos --> {0}".format(pos))
+    #print(" pos --> {0}".format(pos))
     glVertex3d(base_pos[0], base_pos[1], base_pos[2])
     glVertex3d(pos[0], pos[1], pos[2])
 
@@ -35,7 +38,6 @@ def robo_joint_func (link, base_pos, pos) :
     glMultMatrixd(ltrans)
 
     glPushMatrix()
-    #glRasterPos(0,0,0)
     glScalef(0.4,0.4,0.4)
     glMaterialfv(GL_FRONT , GL_SPECULAR, [1.0,1.0,1.0, 1.0])
     glMaterialfv(GL_FRONT , GL_DIFFUSE, [0.0,0.0,0.0, 1.0])
@@ -181,13 +183,32 @@ def draw_osd():
     if diff_time == None :
       return
 
+    if diff_time_dyn == None :
+      return
+
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
     glColor3f(1.0, 1.0, 1.0)
 
+    #glPushMatrix()
+
     # usec --> msec
+    #glRasterPos(0,-0.5)
+    #glTranslatef(10, 10, 0.0)
+    glWindowPos2d(0,3*font2.line_height)
+    #glRasterPos(-window_width/2, -window_height/2)
     msec = diff_time / 1000
-    font2.Render(" FrameRate {0:5.0f} at {1:1.4f}".format(1000 / msec, msec))
+    font2.Render(" FrameRate GL {0:5.0f} at {1:1.4f}".format(1000 / msec, msec))
+
+    glWindowPos2d(0,2*font2.line_height)
+    msec = diff_time_dyn / 1000
+    font2.Render(" FrameRate DY {0:5.0f} at {1:1.4f}".format(1000 / msec, msec))
+
+    glWindowPos2d(0,1*font2.line_height)
+    msec_c = diff_time_dyn_calc / 1000
+    font2.Render("    calc cost {1:+1.4f} {1:+1.4f}".format(msec_c, msec - msec_c))
+
+    #glPopMatrix()
 
 def draw():
     global view_dis
@@ -278,8 +299,7 @@ def keyboard(key, x, y):
         link = robo_link.get_link(str(key))
         if (link != None) :
             link.joint.angle = link.joint.angle + deg2rad(10)
-            robo_link.update(array([0.0,0.0,0.0]))
-            #print (link.joint.angle)
+            #robo_link.update(array([0.0,0.0,0.0]))
             return
 
     elif key in [b'!',b'@',b'#',b'$',b'%',b'^',b'&',b'*',b'(',b')'] :
@@ -290,8 +310,7 @@ def keyboard(key, x, y):
         link = robo_link.get_link(str(value))
         if (link != None) :
             link.joint.angle = link.joint.angle - deg2rad(10)
-            robo_link.update(array([0.0,0.0,0.0]))
-            #print (link.joint.angle)
+            #robo_link.update(array([0.0,0.0,0.0]))
             return
         
     else:
@@ -325,7 +344,38 @@ def init_robo() :
 font = None
 font2 = None
 diff_time = None
+bf_time = None
 count = 0
+count_dyn = 0
+diff_time_dyn = None
+bf_time_dyn = None
+diff_time_dyn_calc = 0
+
+def cb_dynamics(value) :
+    global robo_link
+    global bf_time_dyn
+    global diff_time_dyn
+    global count_dyn
+    global diff_time_dyn_calc
+
+    from datetime import datetime
+
+    max_count = 10
+    count_dyn = count_dyn + 1
+    if count_dyn >= 10 :
+      count_dyn = 0
+      af_time = datetime.now()
+      if (bf_time_dyn != None):
+          diff_time_dyn = (af_time - bf_time_dyn).microseconds / max_count
+      bf_time_dyn = af_time
+
+    bf_time = datetime.now()
+    robo_link.update_tick(array([0,0,0]))
+    af_time = datetime.now()
+    diff_time_dyn_calc = (af_time - bf_time).microseconds
+
+    glutTimerFunc(0, cb_dynamics, 0)
+    return
 
 def cb_draw(value) :
     global bf_time
@@ -344,7 +394,7 @@ def cb_draw(value) :
 
     draw()
 
-    glutTimerFunc(0, cb_draw, 0)
+    glutTimerFunc(32, cb_draw, 0)
 
 def init_font() :
     import os
@@ -369,16 +419,18 @@ def init_font() :
     font2 = FTGL.PixmapFont(fontfile)
     font2.FaceSize(24, 72)
 
+
 glutInit(sys.argv)
 glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH)
-glutInitWindowSize(640, 480)
+glutInitWindowSize(window_width, window_height)
 glutCreateWindow("PyOpenGL 5")
 glutReshapeFunc(resize)
 glutDisplayFunc(_draw)
 glutMouseFunc(mouse)
 glutMotionFunc(motion)
 glutKeyboardFunc(keyboard)
-glutTimerFunc(16, cb_draw, 0)
+glutTimerFunc(0, cb_dynamics, 0)
+glutTimerFunc(32, cb_draw, 0)
 
 init()
 init_font()
