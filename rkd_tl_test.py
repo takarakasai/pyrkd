@@ -12,6 +12,8 @@ import FTGL
 #from dp_roki import *
 from rkd import *
 
+from datetime import datetime
+
 window_width = 640
 window_height = 480
 
@@ -193,20 +195,20 @@ def draw_osd():
     #glPushMatrix()
 
     # usec --> msec
-    #glRasterPos(0,-0.5)
-    #glTranslatef(10, 10, 0.0)
     glWindowPos2d(0,3*font2.line_height)
-    #glRasterPos(-window_width/2, -window_height/2)
-    msec = diff_time / 1000
+    msec = diff_time / 1000.0            # [msec]
     font2.Render(" FrameRate GL {0:5.0f} at {1:1.4f}".format(1000 / msec, msec))
+    #print(" FrameRate GL {0:5.0f} at {1:1.4f}".format(1000 / msec, msec))
 
     glWindowPos2d(0,2*font2.line_height)
-    msec = diff_time_dyn / 1000
+    msec = diff_time_dyn / 1000.0        # [msec]
     font2.Render(" FrameRate DY {0:5.0f} at {1:1.4f}".format(1000 / msec, msec))
+    #print(" FrameRate DY {0:5.0f} at {1:1.4f}".format(1000 / msec, msec))
 
     glWindowPos2d(0,1*font2.line_height)
-    msec_c = diff_time_dyn_calc / 1000
+    msec_c = diff_time_dyn_calc / 1000.0 # [msec]
     font2.Render("    calc cost {1:+1.4f} {1:+1.4f}".format(msec_c, msec - msec_c))
+    #print("    calc cost {1:+1.4f} {1:+1.4f}".format(msec_c, msec - msec_c))
 
     #glPopMatrix()
 
@@ -358,11 +360,9 @@ def cb_dynamics(value) :
     global count_dyn
     global diff_time_dyn_calc
 
-    from datetime import datetime
-
-    max_count = 10
+    max_count = 100.0
     count_dyn = count_dyn + 1
-    if count_dyn >= 10 :
+    if count_dyn >= max_count :
       count_dyn = 0
       af_time = datetime.now()
       if (bf_time_dyn != None):
@@ -384,11 +384,11 @@ def cb_draw(value) :
 
     max_count = 10
     count = count + 1
-    if count >= 10 :
+    if count >= max_count :
       count = 0
-      from datetime import datetime
       af_time = datetime.now()
       if (bf_time != None):
+          print (af_time - bf_time)
           diff_time = (af_time - bf_time).microseconds / max_count
       bf_time = af_time
 
