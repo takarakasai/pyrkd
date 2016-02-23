@@ -230,6 +230,10 @@ def yaw_rot (rad) :
     #base_yaw[1,1] = +cos(rad)
     #return base_yaw
 
+def none_rot (rad) :
+    return identity(3)
+
+
 def rp_rot (roll, pitch) :
     rot = array([[ cos(pitch), sin(pitch) * sin(roll),  sin(pitch) * cos(roll)],
                  [          0,              cos(roll),              -sin(roll)],
@@ -281,6 +285,9 @@ class joint :
             return pitch_rot(rad)
         elif (self.axis == array([0,0,1])).all():
             return yaw_rot(rad)
+        else :
+            print("error get_rot() : {0}".format(self.axis))
+            return none_rot(rad)
 
     def get_joint_func (self) :
         #print self.axis
@@ -438,6 +445,10 @@ class link :
 
     # backward dynamics
     def update_inertia (self) :
+        # TODO
+        if (self.plink == None) :
+            return self.nlink.update_inertia()
+
         # Inertia by link own mass/inertia
         # G = m { (r*r)I - (rt*r) }
         #         ^^^^^    ^^^^^^
@@ -463,7 +474,7 @@ class link :
         G_l = dot(self.tip_offset, self.tip_offset) * I3
         G_r = dot(self.tip_offset.T, self.tip_offset)
         G = self.nlink.total_mass * (G_l + G_r)
-        # 0.2[msec]
+        # 0.2[msec] = 90 + 90 + 20
         self.inertia = dot(dot(self.joint.get_rot(), self.nlink.inertia), self.joint.get_rot().T) + G + self.inertia
 
         return
@@ -527,7 +538,8 @@ class link :
 
         # 1.0[msec] --> 0.001[sec]
         #tick = 0.1 # 0.001
-        tick = 0.001
+        #tick = 0.001
+        tick = 0.002
         self.joint.angle = self.joint.angle + self.joint.veloc * tick
         self.joint.veloc = self.joint.veloc + self.joint.accel * tick
         #print("link {0} ang:{1} veloc:{2} accel:{3}".format(self.name, self.joint.angle, self.joint.veloc, self.joint.accel))
@@ -555,6 +567,9 @@ class link :
 
         #TODO
         self.update_gforce()
+        self.update_inertia()
+        self.update_movement()
+
         return
 
     def func_links (self, base_pos, function) :
