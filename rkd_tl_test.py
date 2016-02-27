@@ -66,10 +66,11 @@ def robo_joint_func (link, base_pos, pos) :
     glMaterialfv(GL_FRONT , GL_DIFFUSE, [0.7,0.7,0.7, 1.0])
     glMaterialfv(GL_FRONT , GL_AMBIENT, [0.35,0.35,0.35, 1.0])
     glMaterialf(GL_FRONT , GL_SHININESS, 0.8)
-    gluCylinder( quadric, 0.1, 0.1, link.tip_offset[2], 20, 6)
+    r = link.tip_offset[2] / 15
+    gluCylinder( quadric, r, r, link.tip_offset[2], 20, 6)
     
     glTranslatef(0, 0, (link.tip_offset[2]))
-    gluDisk( quadric, 0.0, 0.1, 10, 2)
+    gluDisk( quadric, 0.0, r, 10, 2)
 
     glPopMatrix()
     glPushMatrix()
@@ -85,17 +86,18 @@ def robo_joint_func (link, base_pos, pos) :
     glMaterialfv(GL_FRONT , GL_DIFFUSE, [0.2,0.2,0.2, 1])
     glMaterialf(GL_FRONT , GL_SHININESS, 0.8)
 
-    cylinder_height = 0.6
+    r = link.tip_offset[2] / 10
+    cylinder_height = link.tip_offset[2] * 0.3
     glTranslatef(0, 0, -(cylinder_height / 2.0))
 
-    gluCylinder( quadric, 0.2, 0.2, cylinder_height, 10, 2)
+    gluCylinder( quadric, r, r, cylinder_height, 10, 2)
 
     gluQuadricOrientation(quadric, GLU_INSIDE);
-    gluDisk( quadric, 0.0, 0.2, 10, 2)
+    gluDisk( quadric, 0.0, r, 10, 2)
     gluQuadricOrientation(quadric, GLU_OUTSIDE);
 
     glTranslatef(0, 0, (cylinder_height))
-    gluDisk( quadric, 0.0, 0.2, 10, 2)
+    gluDisk( quadric, 0.0, r, 10, 2)
     ##########################
 
     glPopMatrix()
@@ -163,7 +165,7 @@ def draw_robot():
     # model view matrix reset
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
-    draw_floor(0.0, 0.0, -1.0, 100, 100)
+    draw_floor(0.0, 0.0, 0.0, 100, 100)
 
     #glBegin(GL_LINES)
     #robo_link.func_links(array([0.0,0.0,0.0]), robo_func)
@@ -300,8 +302,8 @@ def keyboard(key, x, y):
         global robo_link
         link = robo_link.get_link(str(key))
         if (link != None) :
-            link.joint.angle = link.joint.angle + deg2rad(10)
-            #robo_link.update(array([0.0,0.0,0.0]))
+            #link.joint.angle = link.joint.angle + deg2rad(10)
+            link.joint.torque_a += 1
             return
 
     elif key in [b'!',b'@',b'#',b'$',b'%',b'^',b'&',b'*',b'(',b')'] :
@@ -311,9 +313,14 @@ def keyboard(key, x, y):
         global robo_link
         link = robo_link.get_link(str(value))
         if (link != None) :
-            link.joint.angle = link.joint.angle - deg2rad(10)
-            #robo_link.update(array([0.0,0.0,0.0]))
+            #link.joint.angle = link.joint.angle - deg2rad(10)
+            link.joint.torque_a -= 1
             return
+
+    elif key == b'c' :
+        link = robo_link.get_link('base')
+        if (link != None) :
+            link.clear_nodes_acuational_torque()
         
     else:
         #gluLookAt( eyeX , eyeY , eyeZ , centerX , centerY , centerZ , upX , upY , upZ ) 

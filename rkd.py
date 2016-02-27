@@ -6,9 +6,15 @@ from svgwrite import cm, pt, mm
 import numpy as np
 from numpy import *
 
+from rcdd import *
+
 dwg = svgwrite.Drawing(filename="out.svg", debug=True)
 
 I3 = identity(3)
+
+# 1.0[msec] --> 0.001[sec]
+#tick = 0.001
+tick = 0.003
 
 def mat3to4 (mat3) :
     mat4 = array([
@@ -267,11 +273,13 @@ class joint :
 
     # actuational torque [Nm]
     torque_a = 0.0
+    # actuational torque for gravity conpensation [Nm]
+    torque_g = 0.0
     # external torque [Nm]
     torque_e = 0.0
 
     # viscosity
-    visco = 0.0
+    visco = 0.01
 
     # axis [1,0,0] or [0,1,0] or [0,0,1]
     axis = array([0,0,0])
@@ -312,26 +320,28 @@ class link :
     name = ""
 
     # link offset to tip of this link
-    tip_offset = array([0,0,2])
+    tip_offset = array([0,0,1.0])
 
     local2world = None
     pos = None
+    lvel = None
+    vel = None
 
     # root joint of this link
     joint = None
     #joint = joint()
     # mass [kg]
-    mass = 1.0
+    mass = 0.50
     # mass center offset [0,0,0] [m]
     #mass_offset = array([0,0,0])
     mass_offset = None
     # Inertia [ Ixx, Ixy, Ixy ],
     #         [ Iyx, Iyy, Iyz ],
     #         [ Izx, Izy, Izz ],
-    mass_inertia = array([[1,0,0],[0,1,0],[0,0,1]])
+    mass_inertia = array([[0.5,0,0],[0,0.5,0],[0,0,0.5]])
 
     # TODO: default value
-    inertia = array([[1,0,0],[0,1,0],[0,0,1]])
+    inertia = array([[0.5,0,0],[0,0.5,0],[0,0,0.5]])
 
     # parent link
     plink = None
@@ -344,6 +354,33 @@ class link :
     total_mass_pos = None
     # moment by robot's own weight [kgm,kgm,kgm]
     total_mass_moment = None
+
+    e_force = None
+    e_force_vec = None
+    e_force_pos = None
+    e_force_moment = None
+
+    is_collide = False
+
+    def add_eforce (self, lpos, frcvec) :
+        if self.e_force == None :
+            self.e_force = linalg.norm(frcvec)
+            self.e_force_vec = frcvec
+            self.e_force_pos = lpos
+            self.e_force_moment = cross(lpos, frcvec)
+        else :
+            nrm = linalg.norm(frcvec)
+            #self.e_force = (self.e_force * self.e_force + nrm * frcvec) / (self.e_force + nrm)
+            self.e_force_vec = self.e_force_vec + frcvec
+            self.e_force = linalg.norm(self.e_force_vec)
+            self.e_force_pos = (self.e_force_pos * self.e_force + nrm * lpos) / (self.e_force + nrm)
+            self.e_force_moment = self.e_force_moment + cross(lpos, frcvec)
+
+    def set_eforce_zero (self) :
+        self.e_force = None
+        self.e_force_vec = None
+        self.e_force_pos = None
+        self.e_force_moment = None
 
     def __init__ (self, name='none', axis=array([0,1,0]), parent_link = None) :
         self.name  = name
@@ -434,10 +471,19 @@ class link :
             self.local2world = identity(3)
             #self.pos = base_pos
             self.pos = base_pos + dot(self.local2world, self.tip_offset)
+
+            # TODO: upate veloc
+            self.lvel = array([0,0,0])
+            self.vel = array([0,0,0])
+
         else :
             self.local2world = dot(self.plink.local2world, self.joint.get_rot())
             self.pos = base_pos + dot(self.local2world, self.tip_offset)
             #pos = base_pos + dot(self.joint.get_rot(), self.tip_offset)
+
+            # TODO: upate veloc
+            self.lvel = cross(self.joint.axis * self.joint.veloc, self.tip_offset)
+            self.vel = dot(self.local2world, self.lvel)
 
         #print "pos: {0} {1} @---".format(self.pos, self.name)
         if (self.nlink != None) :
@@ -499,6 +545,22 @@ class link :
             self.total_mass_pos = self.tip_offset + dot(self.nlink.joint.get_rot(), nodes_mass_pos)
             self.total_mass_pos = (self.mass * self.mass_offset + nodes_mass * self.total_mass_pos) / (self.mass + nodes_mass)
 
+            #################################################
+            #TODO:
+            # update external forces
+            if self.nlink.e_force != None :
+                #print("frcvec+: {0} {1}".format(self.nlink.name, self.nlink.e_force_pos));
+                #print("frcvec-: {0} {1}".format(self.nlink.name, self.nlink.e_force_vec));
+                if size(self.nlink.e_force_pos[0]) == 1 : # TODO: why [[]] and [] are there?
+                    lpos = dot(self.nlink.joint.get_rot(), self.nlink.e_force_pos)
+                    frcvec = dot(self.nlink.joint.get_rot(), self.nlink.e_force_vec)
+                else:
+                    lpos = dot(self.nlink.joint.get_rot(), self.nlink.e_force_pos[0])
+                    frcvec = dot(self.nlink.joint.get_rot(), self.nlink.e_force_vec[0])
+                #print("frcvec1: {0}".format(frcvec));
+                self.add_eforce(lpos, frcvec)
+            #################################################
+
         # TODO: should be global
         g = 9.80665
         g_axis_at_world = array([0,0,-1])
@@ -512,11 +574,24 @@ class link :
 
         self.joint.torque_e = dot(self.total_mass_moment, self.joint.axis)
 
+        #TODO: gravity compensation torque
+        self.joint.torque_g = -self.joint.torque_e
+
+        #################################################
+        #TODO:
+        # update external forces
+        if self.e_force_moment != None :
+            if size(self.e_force_moment[0]) == 1 : # TODO: why [[]] and [] are there?
+                self.joint.torque_e += dot(self.e_force_moment, self.joint.axis)
+            else :
+                self.joint.torque_e += dot(self.e_force_moment[0], self.joint.axis)
+        #################################################
+
         return
 
     # forward dynamics
     def update_movement (self) :
-        if (self.nlink == None) :
+        if (self == None) :
             return
 
         # I   : Inertia
@@ -533,25 +608,91 @@ class link :
         # 
         #print("link {0} ta:{1} te:{2}".format(self.name, self.joint.torque_a, self.joint.torque_e))
         #print("link {0} I^-1:{1} I^-1{2}".format(self.name, linalg.inv(self.inertia), dot(linalg.inv(self.inertia), self.joint.axis)))
-        self.joint.accel = self.joint.torque_a + self.joint.torque_e - self.joint.visco * self.joint.veloc
-        self.joint.accel = dot(self.joint.accel * self.joint.axis, dot(linalg.inv(self.inertia), self.joint.axis))
+        self.joint.accel = self.joint.torque_a + self.joint.torque_g + self.joint.torque_e - self.joint.visco * self.joint.veloc
+        work = dot(linalg.inv(self.inertia), self.joint.axis)
+        self.joint.accel = dot(self.joint.accel * self.joint.axis, work)
+        #self.joint.accel = dot(self.joint.accel * self.joint.axis, dot(linalg.inv(self.inertia), self.joint.axis))
 
-        # 1.0[msec] --> 0.001[sec]
-        #tick = 0.1 # 0.001
-        #tick = 0.001
-        tick = 0.002
         self.joint.angle = self.joint.angle + self.joint.veloc * tick
+        if self.joint.angle > deg2rad(140) :
+            self.joint.angle = deg2rad(140)
+        elif self.joint.angle < deg2rad(-140) :
+            self.joint.angle = deg2rad(-140)
         self.joint.veloc = self.joint.veloc + self.joint.accel * tick
         #print("link {0} ang:{1} veloc:{2} accel:{3}".format(self.name, self.joint.angle, self.joint.veloc, self.joint.accel))
 
-        self.nlink.update_movement()
+        if (self.nlink != None) :
+            self.nlink.update_movement()
 
+        return
+
+    def update_collision (self, base_pos) :
+        self.set_eforce_zero()
+        if (self.nlink != None) :
+            self.nlink.update_collision(base_pos)
+        if (self.plink.plink == None) :
+            return
+
+        radius = 0.1
+        l = linalg.norm(self.tip_offset) / 2.0
+        wpos = self.pos - dot(self.local2world, self.tip_offset / 2.0)
+        cyl = cylinder(wpos, radius, l, self.local2world)
+        plane = infini_plane(base_pos, array([[1,0,0],[0,1,0],[0,0,1]]))
+
+        eno, pos, sink = cyl.chk_col_plane(plane)
+        print("---- {0} {1}".format(self.name, sink))
+
+        if pos != None :
+            #print("COLLISION : {0}".format(pos))
+            #print(" coll pos at woords: {0}".format(dot(self.local2world, pos[0]) + self.plink.pos))
+            #print(" name     ; {0}".format(self.name))
+            #print(" wpos     ; {0}".format(wpos))
+            #print(" sink     ; {0}".format(sink))
+            #print(" norm of t: {0}".format(linalg.norm(self.tip_offset)))
+            #print(" tip_pos  : {0}".format(self.pos))
+            #print(" base_pos : {0}".format(base_pos))
+
+            self.add_eforce(pos, -0.8 * sink - 0.1 * self.lvel)
+            if self.is_collide == False :
+                print("collision detected!")
+                #self.add_eforce(pos, -10000000 * sink - 0.1 * self.lvel)
+                self.set_parents_collision_veloc_all()
+                self.is_collide = True
+        else :
+            self.is_collide = False
+
+        return
+
+    def clear_nodes_acuational_torque (self) :
+        self.joint.torque_a = 0
+        if (self.nlink != None) :
+            self.nlink.clear_nodes_acuational_torque()
+
+    def set_parents_collision_veloc_all (self) :
+        if self.vel[2] < 0 :
+            print("col vel {0}".format(self.vel))
+            self.joint.veloc *= -0.6
+        if (self.plink != None) :
+            self.plink.set_parents_collision_veloc_all()
+
+    def disp_pos (self) :
+        print("name {0} : {1}".format(self.name, self.pos))
+        if (self.nlink != None) :
+            self.nlink.disp_pos()
+        return
+
+    def disp_torque_e (self) :
+        print("name {0} : {1}".format(self.name, self.joint.torque_e))
+        if (self.nlink != None) :
+            self.nlink.disp_torque_e()
         return
 
     def update_tick (self, base_pos) :
         # forward kinematics
         # 0.2[msec]
         self.update_forward(base_pos)
+
+        self.nlink.update_collision(base_pos)
 
         # backward dynamics
         # 0.4[msec]
@@ -560,6 +701,8 @@ class link :
         self.update_inertia()
         # 0.2[msec]
         self.update_movement()
+
+        #self.disp_torque_e()
 
     def update (self, base_pos) :
         # forward kinematics
