@@ -317,10 +317,10 @@ class link :
 
     def print_hierarcy (self) :
         if (self.nlink) :
-           print "{0} ==>".format(self.name)
+           print("{0} ==>".format(self.name))
            self.nlink.print_hierarcy()
         else :
-           print "{0}".format(self.name)
+           print("{0}".format(self.name))
 
     def print_svg2d (self, dwg, robo, base_pos, pos, origin) :
         skel = dwg.g()
@@ -330,7 +330,7 @@ class link :
         _exy = (origin[0] +      pos[0] * 100, origin[1] -      pos[1] * 100)
         #print "==== {0} {1} --> {2}".format(self.name, _sxy, _exy)
         skel.add(_link(sxy=_sxy, exy=_exy))
-        print rad2deg(self.joint.angle)
+        print(rad2deg(self.joint.angle))
         jskel = self.joint.get_joint_func()(cxy=_sxy)
 
         rpyrad = rpy2rad(self.local2world)
@@ -462,7 +462,7 @@ class link :
         
 
 def calc_local_jacobian_vec (base_link, end_link) :
-    print "===== name {0} --> {1}".format(base_link.name, end_link.name)
+    print("===== name {0} --> {1}".format(base_link.name, end_link.name))
     # r vector from base to end
     #    end_link.pos  : world coords
     #    base_link.pos : world coords
@@ -502,9 +502,9 @@ class robo :
         self.link.append(link)
 
     def construct_joints (self) :
-        print self.link
+        print(self.link)
         if len(self.link) == 0 :
-            print "error robo does not have any link"
+            print("error robo does not have any link")
             return 
 
         # TODO:
@@ -552,7 +552,7 @@ class robo :
 
         jacobi_local = zeros(6*num_of_links).reshape(num_of_links, 6)
 
-        print "orders {0}".format(base_link.get_link_orders())
+        print("orders {0}".format(base_link.get_link_orders()))
         for idx, link in enumerate(base_link.get_link_orders()[0:num_of_links]) :
             jacobian_vec = calc_local_jacobian_vec(link, end_link)
             #print "==={0} {1} {2}".format(idx, link.name, jacobian_vec)
@@ -608,7 +608,7 @@ if __name__ == "__main__":
         tlink = link5
         #tlink = link2
         num = blink.get_num_of_links() - tlink.get_num_of_links() + 1
-        print "{0} --> {1} : {2}".format(blink.name, tlink.name, num)
+        print("{0} --> {1} : {2}".format(blink.name, tlink.name, num))
 
         #base_angles = array([20, 30, 20, 30, 20, 30])
         #base_angles = array([ 0, 0, 45, 0, 0, 0]) # OK.
@@ -645,32 +645,32 @@ if __name__ == "__main__":
         test_pos_p = tlink.pos
         test_rot_p = dot(offset_rot.T, tlink.local2world)
 
-        print "----- rot at origin ----"
-        print tlink.local2world
-        print rpy2rad(tlink.local2world)
-        print rad2deg(rpy2rad(tlink.local2world))
-        print "--"
-        print dot(tlink.local2world, array([0,0,1.0]))
-        print "------------------------"
+        print("----- rot at origin ----")
+        print(tlink.local2world)
+        print(rpy2rad(tlink.local2world))
+        print(rad2deg(rpy2rad(tlink.local2world)))
+        print("--")
+        print(dot(tlink.local2world, array([0,0,1.0])))
+        print("------------------------")
         
-        print "----- jacobian from kinematics -------"
-        print jacobian
-        print "----- (pseudo) inverse jacobian -----"
+        print("----- jacobian from kinematics -------")
+        print(jacobian)
+        print("----- (pseudo) inverse jacobian -----")
         jacobian_pinv = linalg.pinv(jacobian)
-        print np.round(jacobian_pinv, 3)
-        print np.round(dot(jacobian_pinv, jacobian), 3)
-        print np.round(dot(jacobian, jacobian_pinv), 3)
-        print "-----  check  --------"
-        print " {0} {1}({2}) = {3} + {4}(offset)".format(wtip, tip[3:6], rad2deg(tip[3:6]), tip[0:3], offset)
+        print(np.round(jacobian_pinv, 3))
+        print(np.round(dot(jacobian_pinv, jacobian), 3))
+        print(np.round(dot(jacobian, jacobian_pinv), 3))
+        print("-----  check  --------")
+        print(" {0} {1}({2}) = {3} + {4}(offset)".format(wtip, tip[3:6], rad2deg(tip[3:6]), tip[0:3], offset))
         rads = rpy2rad(tlink.local2world)
-        print " {0} {1}({2}) ".format(tlink.pos, rads, rad2deg(rads))
-        print " by yacobi"
+        print(" {0} {1}({2}) ".format(tlink.pos, rads, rad2deg(rads)))
+        print(" by yacobi")
         rpy = rpy_rot(tip[3:6][0], tip[3:6][1], tip[3:6][2])
-        print np.round(rpy, 8)
-        print " by kine forward"
-        print np.round(dot(offset_rot.T, tlink.local2world), 8)
+        print(np.round(rpy, 8))
+        print(" by kine forward")
+        print(np.round(dot(offset_rot.T, tlink.local2world), 8))
 
-        print "----------------------------------------------------------------------------"
+        print("----------------------------------------------------------------------------")
 
         jacobi_from_plus = zeros(6*num).reshape(num, 6)
         jacobi_from_minus = zeros(6*num).reshape(num, 6)
@@ -702,12 +702,12 @@ if __name__ == "__main__":
             angle = array(rpy2rad(rot)) / (delta_q * 2)
             jacobi_from_diff[3:6, idx] = angle
             
-        print "----- angles -------"
-        print rad2deg(base_angles)
-        print "----- jacobian from kinematics -------"
-        print jacobian
-        print "----- jacobian from diff -------"
-        print jacobi_from_diff
-        print "-------- norm --------"
-        print linalg.norm(jacobi_from_diff - jacobian)
+        print("----- angles -------")
+        print(rad2deg(base_angles))
+        print("----- jacobian from kinematics -------")
+        print(jacobian)
+        print("----- jacobian from diff -------")
+        print(jacobi_from_diff)
+        print("-------- norm --------")
+        print(linalg.norm(jacobi_from_diff - jacobian))
 
