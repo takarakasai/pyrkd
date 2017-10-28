@@ -152,34 +152,34 @@ def keyboard(key, x, y):
     global robo_link
     if key == '\033':
         sys.exit()
-    elif key == 'q':
+    elif key == b'q':
         sys.exit()
-    elif key == 'j':
+    elif key == b'j':
         view_dis = view_dis + 0.5
         print(view_dis)
         #gluPerspective(30.0, 1.0, -3.0, 10.0); 
         #gluLookAt( 0, 0, -view_dis, 0, 0, 0, 0, 1, 0)
         draw()
-    elif key == 'k':
+    elif key == b'k':
         view_dis = view_dis - 0.5
         print(view_dis)
         #gluPerspective(30.0, 1.0, -3.0, 10.0); 
         #gluLookAt( 0, 0, -view_dis, 0, 0, 0, 0, 1, 0)
         draw()
-    elif key == 'u':
+    elif key == b'u':
         round = round + 10.0
         draw()
-    elif key == 'i':
+    elif key == b'i':
         round = round - 10.0
         draw()
-    elif key == 'n':
+    elif key == b'n':
         view_z = view_z + 0.5
         draw()
-    elif key == 'm':
+    elif key == b'm':
         view_z = view_z - 0.5
         draw()
     #elif key == '1' or key == '2' :
-    elif key in ['1','2','3','4','5','6','7','8','9','0'] :
+    elif key in [b'1',b'2',b'3',b'4',b'5',b'6',b'7',b'8',b'9',b'0'] :
         link = robo_link.get_link(key)
         if (link != None) :
             link.joint.angle = link.joint.angle + deg2rad(10)
@@ -188,10 +188,10 @@ def keyboard(key, x, y):
             #print link.joint.angle
             return
 
-    elif key in ['!','@','#','$','%','^','&','*','(',')'] :
-        index = ['!','@','#','$','%','^','&','*','(',')'].index(key)
-        value = ['1','2','3','4','5','6','7','8','9','0'][index]
-        link = robo_link.get_link(str(value))
+    elif key in [b'!',b'@',b'#',b'$',b'%',b'^',b'&',b'*',b'(',b')'] :
+        index = [b'!',b'@',b'#',b'$',b'%',b'^',b'&',b'*',b'(',b')'].index(key)
+        value = [b'1',b'2',b'3',b'4',b'5',b'6',b'7',b'8',b'9',b'0'][index]
+        link = robo_link.get_link(value)
         if (link != None) :
             link.joint.angle = link.joint.angle - deg2rad(10)
             robo_link.update(array([0.0,0.0,0.0]))
@@ -206,14 +206,14 @@ def keyboard(key, x, y):
 def init_robo() :
     blink = link(name='blink')
     blink.tip_offset = array([0,0,0])
-    link0 = link(name='0', parent_link = blink, axis = array([0,0,1]))
-    link1 = link(name='1', parent_link = link0)
-    #link2 = link(name='2', parent_link = link1, axis = array([0,0,1]))
-    link2 = link(name='2', parent_link = link1)
-    #link3 = link(name='3', parent_link = link2)
-    link3 = link(name='3', parent_link = link2, axis = array([1,0,0]))
-    link4 = link(name='4', parent_link = link3)
-    link5 = link(name='5', parent_link = link4)
+    link0 = link(name=b'0', parent_link = blink, axis = array([0,0,1]))
+    link1 = link(name=b'1', parent_link = link0)
+    #link2 = link(name=b'2', parent_link = link1, axis = array([0,0,1]))
+    link2 = link(name=b'2', parent_link = link1)
+    #link3 = link(name=b'3', parent_link = link2)
+    link3 = link(name=b'3', parent_link = link2, axis = array([1,0,0]))
+    link4 = link(name=b'4', parent_link = link3)
+    link5 = link(name=b'5', parent_link = link4)
     
     link5.build_links()
     blink.print_hierarcy()
